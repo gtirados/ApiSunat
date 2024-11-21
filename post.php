@@ -308,7 +308,7 @@ function desarrollo_xml($empresa, $cliente, $venta, $detalles, $cuotas, $guias_a
                     </cac:TaxCategory>
                 </cac:TaxSubtotal>';
         };        
-        // if($venta['total_exonerada'] != 0){
+         if($venta['total_exonerada'] != 0){
         $xml .=  '<cac:TaxSubtotal>
                     <cbc:TaxableAmount currencyID="'. $codigo_moneda .'">' . $venta['total_exonerada'] . '</cbc:TaxableAmount>
                     <cbc:TaxAmount currencyID="'. $codigo_moneda .'">0.00</cbc:TaxAmount>
@@ -320,8 +320,8 @@ function desarrollo_xml($empresa, $cliente, $venta, $detalles, $cuotas, $guias_a
                         </cac:TaxScheme>
                     </cac:TaxCategory>
                 </cac:TaxSubtotal>';
-        // };                    
-        // if($venta['total_inafecta'] != 0){
+         };                    
+         if($venta['total_inafecta'] != 0){
         $xml .=  '<cac:TaxSubtotal>
                     <cbc:TaxableAmount currencyID="'. $codigo_moneda .'">' . $venta['total_inafecta'] . '</cbc:TaxableAmount>
                     <cbc:TaxAmount currencyID="'. $codigo_moneda .'">0.00</cbc:TaxAmount>
@@ -333,19 +333,23 @@ function desarrollo_xml($empresa, $cliente, $venta, $detalles, $cuotas, $guias_a
                         </cac:TaxScheme>
                     </cac:TaxCategory>
                 </cac:TaxSubtotal>';
-        // };
+         };
         //ICBPER
-        $xml .='<cac:TaxSubtotal>
-                    <cbc:TaxAmount currencyID="PEN">0</cbc:TaxAmount>
-                        <cac:TaxCategory>
+
+//TRANSFERENCIA GRATUITA
+  $xml .=  '<cac:TaxSubtotal>
+                    <cbc:TaxableAmount currencyID="'. $codigo_moneda .'">' . $venta['total_gratuita'] . '</cbc:TaxableAmount>
+                    <cbc:TaxAmount currencyID="'. $codigo_moneda .'">0.00</cbc:TaxAmount>
+                    <cac:TaxCategory>
                         <cac:TaxScheme>
-                            <cbc:ID schemeAgencyName="PE:SUNAT" schemeID="UN/ECE 5153" schemeName="Codigo de tributos">7152</cbc:ID>
-                            <cbc:Name>ICBPER</cbc:Name>
-                            <cbc:TaxTypeCode>OTH</cbc:TaxTypeCode>
+                            <cbc:ID schemeName="Codigo de tributos" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05">9996</cbc:ID>
+                            <cbc:Name>GRA</cbc:Name>
+                            <cbc:TaxTypeCode>FRE</cbc:TaxTypeCode>
                         </cac:TaxScheme>
                     </cac:TaxCategory>
                 </cac:TaxSubtotal>';
     $xml .=  '</cac:TaxTotal>';
+
         
     $xml .=  '<cac:'.$tag_total_pago.'>                                
                 <cbc:LineExtensionAmount currencyID="'. $codigo_moneda .'">' . number_format(($total_gravada + $total_exonerada + $total_inafecta), 2, '.', '') . '</cbc:LineExtensionAmount>
@@ -383,14 +387,32 @@ function desarrollo_xml($empresa, $cliente, $venta, $detalles, $cuotas, $guias_a
                     </cac:AlternativeConditionPrice>
                 </cac:PricingReference>';        
 
-        $xml .=     '<cac:TaxTotal>
-                        <cbc:TaxAmount currencyID="' . $codigo_moneda . '">'. number_format(($taxAmount + $icbper * $value['cantidad']), 2, '.', '') .'</cbc:TaxAmount>
-                        <cac:TaxSubtotal>
-                            <cbc:TaxableAmount currencyID="' . $codigo_moneda . '">' . number_format(($value['precio_base']) * $value['cantidad'] ,2, '.', '') . '</cbc:TaxableAmount>
-                            <cbc:TaxAmount currencyID="' . $codigo_moneda . '">'. number_format($taxAmount, 2, '.', '') .'</cbc:TaxAmount>
-                            <cac:TaxCategory>
-                                <cbc:Percent>' . $percent * 100 . '</cbc:Percent>
-                                <cbc:TaxExemptionReasonCode>' . $value['tipo_igv_codigo'] . '</cbc:TaxExemptionReasonCode>
+        $xml .=     '<cac:TaxTotal>';
+	if ($venta['tgratuita'] == 1) {
+       $xml .= '<cbc:TaxAmount currencyID="' . $codigo_moneda . '">0</cbc:TaxAmount>';
+}
+else {
+       $xml .= '<cbc:TaxAmount currencyID="' . $codigo_moneda . '">'. number_format(($taxAmount + $icbper * $value['cantidad']), 2, '.', '') .'</cbc:TaxAmount>';
+}
+    $xml .= '<cac:TaxSubtotal>
+                            <cbc:TaxableAmount currencyID="' . $codigo_moneda . '">' . number_format(($value['precio_base']) * $value['cantidad'] ,2, '.', '') . '</cbc:TaxableAmount>';
+
+if ($venta['tgratuita'] == 1) {
+   $xml .= '<cbc:TaxAmount currencyID="' . $codigo_moneda . '">0</cbc:TaxAmount>';
+}else {
+   $xml .= '<cbc:TaxAmount currencyID="' . $codigo_moneda . '">'. number_format($taxAmount, 2, '.', '') .'</cbc:TaxAmount>';
+}
+
+   $xml .= '<cac:TaxCategory>';
+
+if ($venta['tgratuita'] == 1) {
+   $xml .= '<cbc:Percent>0</cbc:Percent>';
+}
+else {
+   $xml .= '<cbc:Percent>' . $percent * 100 . '</cbc:Percent>';
+}
+
+   $xml .= '<cbc:TaxExemptionReasonCode>' . $value['tipo_igv_codigo'] . '</cbc:TaxExemptionReasonCode>
                                 <cac:TaxScheme>
                                     <cbc:ID>'.$codigos['codigo_tributo'].'</cbc:ID>
                                     <cbc:Name>'.$codigos['nombre'].'</cbc:Name>
